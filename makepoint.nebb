@@ -1,0 +1,15 @@
+fun makePoint(x, y):
+    fun closure(method):
+        if method = "x":
+            return x
+        if method = "y":
+            return y
+        print "Unknown method " + method
+
+    return closure
+
+var point := makePoint(2, 3)
+print point("x")
+print point("y")
+print point("z")
+point(\x, y: x+y)

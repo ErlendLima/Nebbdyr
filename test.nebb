@@ -1,0 +1,12 @@
+print "one"
+print true = (2+3 = 6)
+print one
+print 2+1
+
+var epsilon := 1e-5
+var heights := i for i in 1,2..10
+
+massmodel := 5,2,5,7
+localomp := 10.25,1
+mut var x := 0.0
+x <- 5

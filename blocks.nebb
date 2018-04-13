@@ -1,0 +1,24 @@
+mut var a := "global a"
+mut var b := "global b"
+var c := "global c"
+mut var d := "d is duck"
+print a
+print b
+print c 
+print d
+    mut var a := "outer a"
+    mut var b := "outer b"
+    d := "d is drunk"
+        mut var a := "inner a"
+        var b := "inner b"
+        print a
+        print b
+        print c
+        print d
+    print a
+    print b
+    print c
+print a
+print b
+print c
+print d

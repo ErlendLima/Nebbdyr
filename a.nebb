@@ -1,0 +1,8 @@
+var a := 1
+mut var b := 1
+    var a := a + 2
+    mut var b := b + 2
+    print a
+    print b
+print a
+print b

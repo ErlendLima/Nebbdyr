@@ -1,0 +1,46 @@
+mut var a
+var b := 6
+a := "fish"
+print a
+print b
+a := "duck"
+print b
+print a
+    a := "also duck"
+    unstable mut var c := "not duck"
+    a := c
+    print a
+        var b := a
+        print "b is now"
+        print b
+    print "while b is now"
+    print b
+print "and finally, b is "
+print b
+
+fun fish(x):
+    mut var a := x+4
+    return a + 5
+
+print fish(5)
+mut var h := list(1,2,34, 5, 6)
+mut var d := "yng"
+print d := tostring(h)
+print "The size of h is " + tostring(len(h))
+
+mass := 7
+mass := 8
+
+if mass = 8:
+     
+
+scope := with mass
+    5 : height := [1,2,3,4]
+    8 : height := [6,7,93,21,1,35]
+
+with for all height:
+    1 : freeze: false
+    _ : freeze: true
+
+with height in scope:
+    freeze: false
