@@ -43,7 +43,7 @@ if __name__ == '__main__':
                                          "Call : callee, paren, arguments",
                                          "Lambda : parameters, body",
                                          "Grouping : expression",
-                                         "List : expression"
+                                         "List : expression",
                                          "Literal : value",
                                          "Logical : left, operator, right",
                                          "Unary : operator, right",

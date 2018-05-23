@@ -41,7 +41,8 @@ class TokenType(Enum):
     # Literals
     IDENTIFIER = 20
     STRING = 21
-    NUMBER = 22
+    INT = 22
+    FLOAT = 53
 
     # Keywords
     AND = 23

@@ -1,0 +1,14 @@
+fun fibonacci(n):
+    mut var a := 0
+    mut var b := 1
+    
+    while a < n:
+        var temp := a
+        a := b
+        b := temp + b
+    return a
+
+mut var i := 0
+while i < 5000:
+    print fibonacci(i)
+    i := i+1

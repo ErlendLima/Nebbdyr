@@ -2,7 +2,8 @@
 
 from tokentype import TokenType as TT
 from expr import (Binary, Grouping, Literal, Unary,
-                  Variable, Assign, Logical, Call)
+                  Variable, Assign, Logical, Call,
+                  List)
 import stmt
 
 from errors import ParseException
@@ -92,6 +93,7 @@ class Parser:
         if not self.check(TT.RIGHT_PAREN):
             increment = self.expression()
         self.consume(TT.RIGHT_PAREN, "Expect ')' after for clauses.")
+        print("dog")
 
         body = self.statement()
 
@@ -358,7 +360,7 @@ class Parser:
         if self.match(TT.NONE):
             return Literal(None)
 
-        if self.match(TT.NUMBER, TT.STRING):
+        if self.match(TT.INT, TT.FLOAT, TT.STRING):
             return Literal(self.previous().literal)
 
         if self.match(TT.IDENTIFIER):
@@ -370,7 +372,9 @@ class Parser:
             return Grouping(expr)
 
         if self.match(TT.LEFT_BRACKET):
-            expr = self.expression()
+            expr = [self.expression()]
+            while self.match(TT.COMMA):
+                expr.append(self.expression())
             self.consume(TT.RIGHT_BRACKET, "Expect ']' after expression.")
             return List(expr)
 

@@ -126,6 +126,9 @@ class Resolver:
 
         self.resolve_local(expr, expr.name, True)
 
+    def visit_list_expr(self, expr):
+        self.resolve(expr.expression)
+
     def resolve(self, statements):
         if isinstance(statements, (list, tuple)):
             for statement in statements:

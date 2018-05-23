@@ -189,8 +189,10 @@ class Scanner:
             self.advance()
             while self.peek().isnumeric():
                 self.advance()
+            self.add_token(TT.FLOAT, float(self.source[self.start:self.current]))
+        else:
+            self.add_token(TT.INT, float(self.source[self.start:self.current]))
 
-        self.add_token(TT.NUMBER, float(self.source[self.start:self.current]))
 
     def pycall(self):
         while self.peek() != '@' and not self.is_at_end():

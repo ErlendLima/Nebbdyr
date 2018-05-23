@@ -47,6 +47,14 @@ class Grouping(Expr):
         return visitor.visit_grouping_expr(self)
 
 
+class List(Expr):
+    def __init__(self, expression):
+        self.expression = expression
+
+    def accept(self, visitor):
+        return visitor.visit_list_expr(self)
+
+
 class Literal(Expr):
     def __init__(self, value):
         self.value = value

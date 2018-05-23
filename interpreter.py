@@ -155,6 +155,9 @@ class Interpreter:
         else:
             return self.globals.get(name)
 
+    def visit_list_expr(self, expr):
+        return [self.evaluate(e) for e in expr.expression]
+
     def check_number_operand(self, operator, operand):
         if not isinstance(operand, float):
             raise RuntimeException(operator, "Operand must be a number.")
