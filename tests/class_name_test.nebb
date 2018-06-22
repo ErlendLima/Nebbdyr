@@ -1,0 +1,8 @@
+class DevonshireCream:
+    serveOn():
+        return "Scones"
+
+    serveOff():
+        return "fish"
+
+print DevonshireCream

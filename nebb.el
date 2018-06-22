@@ -4,7 +4,8 @@
 (setq nebbdyr-font-lock-keywords
       (let* (
             ;; define several category of keywords
-            (x-keywords '("break" "while" "in" ".." "for" "unstable" "continue" "else" "print" "if" "fun" "return" "ensure" "mut" "var"))
+             (x-keywords '("break" "while" "in" ".." "for" "unstable" "continue" "else" "print"
+                           "if" "fun" "return" "ensure" "mut" "var" "class"))
 
             ;; generate regex string for each category of keywords
             (x-keywords-regexp (regexp-opt x-keywords 'words)))

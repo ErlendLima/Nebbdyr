@@ -161,7 +161,7 @@ class Resolver:
                 self.nebbdyr.error('', "Local variable '{}' is defined but not used.".format(name))
 
     def declare(self, name):
-        if len(self.scopes) == 0:
+        if not self.scopes:
             return
 
         scope = self.scopes[-1]
@@ -175,7 +175,7 @@ class Resolver:
         scope[name.lexeme] = VariableState.DECLARED
 
     def define(self, name):
-        if len(self.scopes) == 0:
+        if not self.scopes:
             return
 
         self.scopes[-1][name.lexeme] = VariableState.DEFINED

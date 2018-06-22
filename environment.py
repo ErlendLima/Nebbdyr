@@ -10,7 +10,7 @@ class Variable:
         self.name = name
         self.value = value
         self.attributes = attributes
-        self.defined = False if value is None else True
+        self.assigned = False if value is None else True
 
     def assign(self, value):
         if Attribute.MUTABLE in self.attributes:
@@ -18,9 +18,11 @@ class Variable:
                 if self.value is not None and Type.type(self.value) != Type.type(value):
                     raise RuntimeException(self.name, "Variable '{}' is type stable and can not change type to '{}'".format(self.name.lexeme, Type.type(value)))
             self.value = value
-        elif self.defined:
-            raise RuntimeException(self.name, "Variable '{}' is immutable and can not be redefined.".format(self.name.lexeme))
-        self.defined = True
+        elif self.assigned:
+            raise RuntimeException(self.name, "Variable '{}' is immutable and can not be reassigned.".format(self.name.lexeme))
+        else:
+            self.value = value
+        self.assigned = True
 
 
 class Environment:
@@ -33,7 +35,7 @@ class Environment:
 
     def get(self, name):
         if name.lexeme in self.values:
-            if self.values[name.lexeme].defined:
+            if self.values[name.lexeme].assigned:
                 return self.values[name.lexeme].value
             else:
                 raise RuntimeException(name, "Can not get value of unassigned variable '{}'.".format(name.lexeme))
@@ -45,7 +47,7 @@ class Environment:
             name.lexeme))
 
     def get_at(self, distance, name):
-        if self.ancestor(distance).values[name.lexeme].defined:
+        if self.ancestor(distance).values[name.lexeme].assigned:
             return self.ancestor(distance).values[name.lexeme].value
         else:
             raise RuntimeException(name, "Can not get value of unassigned variable '{}'.".format(name.lexeme))
@@ -58,7 +60,7 @@ class Environment:
 
     def ancestor(self, distance):
         environment = self
-        for i in range(distance):
+        for _ in range(distance):
             environment = environment.enclosing
 
         return environment
@@ -68,7 +70,8 @@ class Environment:
 
     def assign(self, name, value):
         if name.lexeme in self.values:
-            return self.values[name.lexeme].value
+            self.values[name.lexeme].assign(value)
+            return
         else:
             if self.enclosing is not None:
                 return self.enclosing.assign(name, value)

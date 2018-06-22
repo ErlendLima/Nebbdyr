@@ -1,0 +1,11 @@
+var a := 5
+var b := "duck"
+var c := a
+
+print a
+print b
+print c
+
+mut var d := a + 9
+print d
+print d := d + 1

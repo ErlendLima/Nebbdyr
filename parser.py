@@ -47,10 +47,11 @@ class Parser:
     def class_declaration(self):
         name = self.consume(TT.IDENTIFIER, "Expect class name.")
         self.consume(TT.COLON, "Expect newline after class name.")
-        self.consume(TT.INDENT, "Expect indent after ':'.")
+        self.consume(TT.NEWLINE, "Expect newline after ':'.")
+        self.consume(TT.INDENT, "Expect indent after class name.")
 
         methods = []
-        while not self.check(TT.DEDENT and not self.is_at_end()):
+        while not self.check(TT.DEDENT) and not self.is_at_end():
             methods.append(self.function("method"))
 
         self.consume(TT.DEDENT, "Expect dedent after class body.")

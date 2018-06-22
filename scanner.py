@@ -32,7 +32,8 @@ class Scanner:
             "var": TT.VAR,
             "break": TT.BREAK,
             "continue": TT.CONTINUE,
-            "unstable": TT.UNSTABLE
+            "unstable": TT.UNSTABLE,
+            "class": TT.CLASS
         }
 
     def scan_tokens(self):
@@ -65,7 +66,8 @@ class Scanner:
 
                 if difference > 1:
                     self.runner.error(self.line,
-                                      "Indentation too large. Expect {}, found {}".format(self.indentation_stack[-1]*4, spaces))
+                                      "Indentation too large. Expect {}, found {}".format(
+                                          self.indentation_stack[-1]*4, spaces))
                 elif difference == 1:
                     self.indentation_stack.append(indentation)
                     self.tokens.append(Token(TT.INDENT, '', None, self.line))

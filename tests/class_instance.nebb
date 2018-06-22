@@ -1,0 +1,7 @@
+class Bagel:
+    foo():
+        return 5
+
+print Bagel
+var bagel := Bagel()
+print bagel

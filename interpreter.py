@@ -6,6 +6,7 @@ from attributes import Attribute
 from environment import Environment
 from errors import BreakException, ContinueException, Return, RuntimeException
 from nebbdyrfunction import NebbdyrFunction
+from nebbdyrclass import NebbdyrClass
 from tokentype import TokenType as TT
 from globalenvironment import GlobalEnvironment
 
@@ -46,7 +47,7 @@ class Interpreter:
         self.execute_block(stmt.statements, Environment(self.environment))
 
     def visit_class_stmt(self, stmt):
-        self.environment.define(stmt.name.lexeme, None)
+        self.environment.define(stmt.name, None)
         klasse = NebbdyrClass(stmt.name.lexeme)
         self.environment.assign(stmt.name, klasse)
         return None
