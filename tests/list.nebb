@@ -1,8 +1,9 @@
-var b := 10
-mut var a := [2*b, 4, 7, 3.0/b]
+var a := [1, 2+5, 3, 4, 5, none, 8]
+var b := 9
 print a
+print a[4]
+print a[1,2,-2]
 
-fun foo(x):
-    return x/12
-
-print [b/10, foo(b), foo(b*10), a]
+# Should fail
+# print a[9]
+# print b[0]

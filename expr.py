@@ -30,6 +30,16 @@ class Call(Expr):
         return visitor.visit_call_expr(self)
 
 
+class Index(Expr):
+    def __init__(self, collection, paren, indicies):
+        self.collection = collection
+        self.paren = paren
+        self.indicies = indicies
+
+    def accept(self, visitor):
+        return visitor.visit_index_expr(self)
+
+
 class Lambda(Expr):
     def __init__(self, parameters, body):
         self.parameters = parameters
@@ -37,6 +47,15 @@ class Lambda(Expr):
 
     def accept(self, visitor):
         return visitor.visit_lambda_expr(self)
+
+
+class Get(Expr):
+    def __init__(self, object, name):
+        self.object = object
+        self.name = name
+
+    def accept(self, visitor):
+        return visitor.visit_get_expr(self)
 
 
 class Grouping(Expr):
@@ -71,6 +90,16 @@ class Logical(Expr):
 
     def accept(self, visitor):
         return visitor.visit_logical_expr(self)
+
+
+class Set(Expr):
+    def __init__(self, object, name, value):
+        self.object = object
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visit_set_expr(self)
 
 
 class Unary(Expr):

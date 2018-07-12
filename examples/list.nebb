@@ -1,0 +1,8 @@
+var b := 10
+mut var a := [2*b, 4, 7, 3.0/b]
+print a
+
+fun foo(x):
+    return x/12
+
+print [b/10, foo(b), foo(b*10), a]

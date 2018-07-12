@@ -1,6 +1,6 @@
 class Bagel:
-    foo():
-        return 5
+    duck():
+        return 0
 
 print Bagel
 var bagel := Bagel()

@@ -3,7 +3,7 @@
 from tokentype import TokenType as TT
 from expr import (Binary, Grouping, Literal, Unary,
                   Variable, Assign, Logical, Call,
-                  List)
+                  List, Get, Set, Index, Lambda)
 import stmt
 
 from errors import ParseException
@@ -31,8 +31,6 @@ class Parser:
                 return self.class_declaration()
             if self.match(TT.FUN):
                 return self.function("function")
-            if self.match(TT.LAMBDA):
-                return self.lambda_declaration()
             if self.match(TT.VAR):
                 return self.var_declaration()
             if self.match(TT.MUT):
@@ -77,36 +75,45 @@ class Parser:
         return self.expression_statement()
 
     def for_statement(self):
-        self.consume(TT.LEFT_PAREN, "Expect '(' after 'for'.")
-        if self.match(TT.SEMICOLON):
-            initializer = None
-        elif self.match(TT.VAR):
-            initializer = self.var_declaration()
-        else:
-            initializer = self.expression_statement()
+        next = self.consume(TT.IDENTIFIER, "Expect variable name.")
+        self.consume(TT.IN, "Expect 'in' after variable name.")
+        collection = self.consume(TT.IDENTIFIER, "Expect collection to iterate over.")
+        self.consume(TT.COLON, "Expect ':' to end 'for'.")
+        self.consume(TT.NEWLINE, "Expect newline after ':'.")
 
-        condition = None
-        if not self.check(TT.SEMICOLON):
-            condition = self.expression()
-        self.consume(TT.SEMICOLON, "Expect ';' after loop condition")
+        # self.consume(TT.LEFT_PAREN, "Expect '(' after 'for'.")
+        # if self.match(TT.SEMICOLON):
+        #     initializer = None
+        # elif self.match(TT.VAR):
+        #     initializer = self.var_declaration()
+        # else:
+        #     initializer = self.expression_statement()
 
-        increment = None
-        if not self.check(TT.RIGHT_PAREN):
-            increment = self.expression()
-        self.consume(TT.RIGHT_PAREN, "Expect ')' after for clauses.")
-        print("dog")
+        # condition = None
+        # if not self.check(TT.SEMICOLON):
+        #     condition = self.expression()
+        # self.consume(TT.SEMICOLON, "Expect ';' after loop condition")
+
+        # increment = None
+        # if not self.check(TT.RIGHT_PAREN):
+        #     increment = self.expression()
+        # self.consume(TT.RIGHT_PAREN, "Expect ')' after for clauses.")
+        iterator = stmt.Mut('')
 
         body = self.statement()
+        body = stmt.Block([body, Assign(iterator, collection)])
+        body = stmt.While(None, body)
+        body = stmt.Block([stmt.Unstable(iterator, None), body])
 
-        if increment is not None:
-            body = stmt.Block([body, stmt.Expression(increment)])
+        # if increment is not None:
+        #     body = stmt.Block([body, stmt.Expression(increment)])
 
-        if condition is None:
-            condition = Literal(True)
-        body = stmt.While(condition, body)
+        # if condition is None:
+        #     condition = Literal(True)
+        # body = stmt.While(condition, body)
 
-        if initializer is not None:
-            body = stmt.Block([initializer, body])
+        # if initializer is not None:
+        #     body = stmt.Block([initializer, body])
 
         return body
 
@@ -230,9 +237,14 @@ class Parser:
         return stmt.Function(name, parameters, body)
 
     def lambda_declaration(self):
-        self.consume(TT.LEFT_PAREN, "Expect '(' after \\.")
+        # Parentheses are optional
+        using_paren = False
+        if self.check(TT.LEFT_PAREN):
+            using_paren = True
+            self.advance()
+        # self.consume(TT.LEFT_PAREN, "Expect '(' after \\.")
         parameters = []
-        if not self.check(TT.RIGHT_PAREN):
+        if not self.match(TT.RIGHT_PAREN, TT.COLON):
             parameters.append(self.consume(TT.IDENTIFIER,
                                            "Expect parameter name."))
             while self.match(TT.COMMA):
@@ -241,9 +253,13 @@ class Parser:
                 if len(parameters) >= 5:
                     self.error(self.peek(),
                                "Cannot have more than 5 parameters.")
-        self.consume(TT.RIGHT_PAREN, "Expect ')' after parameters")
+        if using_paren:
+            self.consume(TT.RIGHT_PAREN, "Expect ')' after parameters")
         self.consume(TT.COLON, "Expect ':' before lambda body.")
-        return stmt.Function(None, parameters, body)
+        body = self.expression()
+        body = stmt.Return(self.previous(), body)
+
+        return Lambda(parameters, body)
 
     def block(self):
         statements = []
@@ -263,6 +279,8 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                return Set(expr.object, expr.name, value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -345,13 +363,36 @@ class Parser:
         return Call(callee, paren, arguments)
 
     def call(self):
-        expr = self.primary()
+        expr = self.indexation()
         while True:
             if self.match(TT.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TT.DOT):
+                name = self.consume(TT.IDENTIFIER,
+                                    "Expect property name after '.'.")
+                expr = Get(expr, name)
             else:
                 break
         return expr
+
+    def indexation(self):
+        expr = self.primary()
+        while True:
+            if self.match(TT.LEFT_BRACKET):
+                expr = self.finish_indexation(expr)
+            else:
+                break
+        return expr
+
+    def finish_indexation(self, collection):
+        indicies = []
+        if not self.check(TT.RIGHT_BRACKET):
+            indicies.append(self.expression())
+            while self.match(TT.COMMA):
+                indicies.append(self.expression())
+        paren = self.consume(TT.RIGHT_BRACKET, "Expect ']' after indicies.")
+
+        return Index(collection, paren, indicies)
 
     def primary(self):
         if self.match(TT.FALSE):
@@ -378,6 +419,9 @@ class Parser:
                 expr.append(self.expression())
             self.consume(TT.RIGHT_BRACKET, "Expect ']' after expression.")
             return List(expr)
+
+        if self.match(TT.LAMBDA):
+            return self.lambda_declaration()
 
         raise self.error(self.peek(), "Expected expression.")
 

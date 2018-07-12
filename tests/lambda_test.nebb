@@ -1,0 +1,10 @@
+mut var x := 9
+mut var y := \(i, j): i*j
+mut var z := 8
+print y(x,z)
+
+var t := λ(x, y): x+y
+print t(10, 20)
+
+var b := λx, y: 5
+print b(10, 2)

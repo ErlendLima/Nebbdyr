@@ -7,6 +7,8 @@ from enum import Enum, unique
 class FunctionType(Enum):
     NONE = 0
     FUNCTION = 1
+    METHOD = 2
+    LAMBDA = 3
 
 
 @unique
@@ -35,6 +37,10 @@ class Resolver:
         self.declare(stmt.name)
         self.define(stmt.name)
 
+        for method in stmt.methods:
+            declaration = FunctionType.METHOD
+            self.resolve_function(method, declaration)
+
     def visit_expression_stmt(self, stmt):
         self.resolve(stmt.expression)
 
@@ -54,7 +60,8 @@ class Resolver:
         self.resolve(stmt.expression)
 
     def visit_return_stmt(self, stmt):
-        if self.current_function != FunctionType.FUNCTION:
+        if self.current_function not in (FunctionType.FUNCTION,
+                                         FunctionType.LAMBDA):
             self.nebbdyr.error(stmt.keyword,
                                "Cannot return from top-level code.")
 
@@ -105,6 +112,15 @@ class Resolver:
         for argument in expr.arguments:
             self.resolve(argument)
 
+    def visit_index_expr(self, expr):
+        self.resolve(expr.collection)
+
+        for index in expr.indicies:
+            self.resolve(index)
+
+    def visit_get_expr(self, expr):
+        self.resolve(expr.object)
+
     def visit_grouping_expr(self, expr):
         self.resolve(expr.expression)
 
@@ -114,6 +130,10 @@ class Resolver:
     def visit_logical_expr(self, expr):
         self.resolve(expr.left)
         self.resolve(expr.right)
+
+    def visit_set_expr(self, expr):
+        self.resolve(expr.value)
+        self.resolve(expr.object)
 
     def visit_unary_expr(self, expr):
         self.resolve(expr.right)
@@ -128,6 +148,9 @@ class Resolver:
 
     def visit_list_expr(self, expr):
         self.resolve(expr.expression)
+
+    def visit_lambda_expr(self, expr):
+        self.resolve_function(expr, FunctionType.LAMBDA)
 
     def resolve(self, statements):
         if isinstance(statements, (list, tuple)):
@@ -158,7 +181,8 @@ class Resolver:
             if state == VariableState.DECLARED:
                 self.nebbdyr.error('', "Local variable '{}' is declared but not used.".format(name))
             elif state == VariableState.DEFINED:
-                self.nebbdyr.error('', "Local variable '{}' is defined but not used.".format(name))
+                if self.current_function != FunctionType.LAMBDA:
+                    self.nebbdyr.error('', "Local variable '{}' is defined but not used.".format(name))
 
     def declare(self, name):
         if not self.scopes:

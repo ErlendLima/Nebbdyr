@@ -122,6 +122,10 @@ class Scanner:
         elif char == '#':
             while self.peek() != '\n' and not self.is_at_end():
                 self.advance()
+            # Eat the trailing newline
+            if not self.is_at_end():
+                self.advance()
+                self.line += 1
         # Double lexemes
         elif char == ':':
             if self.match('='):
@@ -194,7 +198,6 @@ class Scanner:
             self.add_token(TT.FLOAT, float(self.source[self.start:self.current]))
         else:
             self.add_token(TT.INT, float(self.source[self.start:self.current]))
-
 
     def pycall(self):
         while self.peek() != '@' and not self.is_at_end():

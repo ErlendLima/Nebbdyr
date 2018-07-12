@@ -1,0 +1,9 @@
+class Duck:
+    foo():
+        return "foo"
+
+var duck := Duck()
+duck.speak := "quack"
+
+print "Duck says " + duck.speak()
+

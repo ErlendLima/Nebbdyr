@@ -1,11 +1,30 @@
-var a := 5
-var b := "duck"
-var c := a
+# Immutable declaration
+var ia
+# Mutable declaration
+mut var ma
+# Unstable declarations
+unstable mut var uma
+unstable var ua
 
-print a
-print b
-print c
+# Immutable assignment
+ia := 8
 
-mut var d := a + 9
-print d
-print d := d + 1
+# Mutable assignment and reassignment
+ma := 9
+ma := 11
+
+# Unstable assignment and type shift
+uma := 10
+uma := "fish"
+
+print "====ASSIGNMENT===="
+print "Immutable is: " + tostring(ia)
+print "Mutable is:   " + tostring(ma)
+print "Unstable is:  " + tostring(uma)
+
+# Declaration and assignment
+var ib := 87
+mut var mb := 90
+
+print "Decas imut:   " + tostring(ib)
+print "Decas mut:    " + tostring(mb)

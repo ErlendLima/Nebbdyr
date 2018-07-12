@@ -39,3 +39,10 @@ class StableException(Exception):
     def __init__(self, msg, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
         self.msg = msg
+
+
+class IndexException(Exception):
+    def __init__(self, token, *args, **kwargs):
+        self.token = token
+        self.msg = args[0]
+        Exception.__init__(self, *args, **kwargs)

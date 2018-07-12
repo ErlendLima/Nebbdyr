@@ -1,0 +1,5 @@
+class Duck:
+    eat():
+        print "Crunch, crunch, crunch!"
+
+Duck().eat()

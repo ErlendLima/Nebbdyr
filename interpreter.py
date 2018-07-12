@@ -4,9 +4,10 @@ import datetime
 
 from attributes import Attribute
 from environment import Environment
-from errors import BreakException, ContinueException, Return, RuntimeException
+from errors import BreakException, ContinueException, Return, RuntimeException, IndexException
 from nebbdyrfunction import NebbdyrFunction
 from nebbdyrclass import NebbdyrClass
+from nebbdyrinstance import NebbdyrInstance
 from tokentype import TokenType as TT
 from globalenvironment import GlobalEnvironment
 
@@ -20,9 +21,14 @@ class Interpreter:
 
     def interpret(self, statements):
         try:
-            for statement in statements:
-                self.execute(statement)
+            if not isinstance(statements, list):
+                self.execute(statements)
+            else:
+                for statement in statements:
+                    self.execute(statement)
         except RuntimeException as exc:
+            self.nebbdyr.runtime_error(exc)
+        except IndexException as exc:
             self.nebbdyr.runtime_error(exc)
 
     def evaluate(self, expr):
@@ -38,8 +44,11 @@ class Interpreter:
         previous = self.environment
         try:
             self.environment = environment
-            for statement in statements:
-                self.execute(statement)
+            if not isinstance(statements, list):
+                self.execute(statements)
+            else:
+                for statement in statements:
+                    self.execute(statement)
         finally:
             self.environment = previous
 
@@ -48,7 +57,13 @@ class Interpreter:
 
     def visit_class_stmt(self, stmt):
         self.environment.define(stmt.name, None)
-        klasse = NebbdyrClass(stmt.name.lexeme)
+
+        methods = {}
+        for method in stmt.methods:
+            function = NebbdyrFunction(method, self.environment)
+            methods[method.name.lexeme] = function
+
+        klasse = NebbdyrClass(stmt.name.lexeme, methods)
         self.environment.assign(stmt.name, klasse)
         return None
 
@@ -131,6 +146,15 @@ class Interpreter:
                 return left
 
         return self.evaluate(expr.right)
+
+    def visit_set_expr(self, expr):
+        object = self.evaluate(expr.object)
+
+        if not isinstance(object, NebbdyrInstance):
+            raise RuntimeError(expr.name, "Only instances have fields.")
+
+        value = self.evaluate(expr.value)
+        object.set(expr.name, value)
 
     def visit_grouping_expr(self, expr):
         return self.evaluate(expr.expression)
@@ -221,6 +245,45 @@ class Interpreter:
         except Exception as e:
             raise e
             raise RuntimeException(expr.paren, "Can only call functions")
+
+    def visit_index_expr(self, expr):
+        def is_valid(collection, index):
+            if not isinstance(collection, (list)):
+                raise IndexException(expr.paren, f"Can not index type '{type(collection)}'.")
+            if len(collection) <= index:
+                col = str(collection)
+                if(len(collection) > 4):
+                    col = (f'[{collection[0]}, {collection[1]}, ..., '
+                           f'{collection[-2]}, {collection[-1]}]')
+
+                raise IndexException(expr.paren, f"Index {index} is out of bounds of collection {col} of length {len(collection)}.")
+
+        collection = self.evaluate(expr.collection)
+
+        indicies = []
+        for index in expr.indicies:
+            index = self.evaluate(index)
+            indicies.append(index)
+
+        indicies = [int(i) for i in indicies]
+        if len(indicies) == 1:
+            is_valid(collection, indicies[0])
+            return collection[indicies[0]]
+        else:
+            for index in indicies:
+                is_valid(collection, index)
+            return [collection[i] for i in indicies]
+
+    def visit_lambda_expr(self, expr):
+        function = NebbdyrFunction(expr, self.environment)
+        return function
+
+    def visit_get_expr(self, expr):
+        object = self.evaluate(expr.object)
+        if isinstance(object, NebbdyrInstance):
+            return object.get(expr.name)
+
+        raise RuntimeException(expr.name, "Only instances have properties")
 
     def check_number_operands(self, operator, left, right):
         if not isinstance(left, float):

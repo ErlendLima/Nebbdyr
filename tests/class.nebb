@@ -1,6 +1,0 @@
-class Breakfast:
-    cook():
-        print "Eggs"
-
-    serve(who):
-        print "Enjoy breakfast " + who
