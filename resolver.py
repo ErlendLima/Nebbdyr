@@ -135,6 +135,12 @@ class Resolver:
         self.resolve(expr.value)
         self.resolve(expr.object)
 
+    def visit_listconstructor_expr(self, expr):
+        self.resolve(expr.start)
+        if expr.next is not None:
+            self.resolve(expr.next)
+        self.resolve(expr.stop)
+
     def visit_unary_expr(self, expr):
         self.resolve(expr.right)
 

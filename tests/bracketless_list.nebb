@@ -1,0 +1,9 @@
+mut var a := [1,2,3,4]
+print a
+mut var b := 1, 2, 5
+print b
+
+var c
+
+c := "a", "b", "c"
+print c

@@ -3,7 +3,7 @@
 from tokentype import TokenType as TT
 from expr import (Binary, Grouping, Literal, Unary,
                   Variable, Assign, Logical, Call,
-                  List, Get, Set, Index, Lambda)
+                  List, Get, Set, Index, Lambda, ListConstructor)
 import stmt
 
 from errors import ParseException
@@ -154,6 +154,8 @@ class Parser:
         initalizer = None
         if self.match(TT.ASSIGNMENT):
             initalizer = self.expression()
+            if self.match(TT.COMMA):
+                initalizer = List([initalizer, *self.inner_list().expression])
 
         if not self.is_at_end():
             self.consume(TT.NEWLINE, "Expect newline after variable initialization")
@@ -166,6 +168,8 @@ class Parser:
         initalizer = None
         if self.match(TT.ASSIGNMENT):
             initalizer = self.expression()
+            if self.match(TT.COMMA):
+                initalizer = List([initalizer, *self.inner_list().expression])
 
         self.consume(TT.NEWLINE, "Expect newline after variable declaration")
         return stmt.Mut(name, initalizer)
@@ -177,16 +181,18 @@ class Parser:
             self.consume(TT.VAR, "Expect 'var' after keyword 'unstable'.")
         name = self.consume(TT.IDENTIFIER, "Expect variable name.")
 
-        initializer = None
+        initalizer = None
         if self.match(TT.ASSIGNMENT):
-            initializer = self.expression()
+            initalizer = self.expression()
+            if self.match(TT.COMMA):
+                initalizer = List([initalizer, *self.inner_list().expression])
 
         self.consume(TT.NEWLINE, "Expect newline after variable declaration.")
-        return stmt.Unstable(name, initializer)
+        return stmt.Unstable(name, initalizer)
 
     def while_statement(self):
         condition = self.expression()
-        self.consume(TT.COLON, "Expect ':' after if condition.")
+        self.consume(TT.COLON, "Expect ':' after while condition.")
         self.consume(TT.NEWLINE, "Expect newline after ':'.")
 
         try:
@@ -212,7 +218,7 @@ class Parser:
 
     def expression_statement(self):
         expr = self.expression()
-        if not self.check(TT.EOF):
+        if not self.is_at_end():
             self.consume(TT.NEWLINE, "Expect newline after expression.")
         return stmt.Expression(expr)
 
@@ -244,7 +250,7 @@ class Parser:
             self.advance()
         # self.consume(TT.LEFT_PAREN, "Expect '(' after \\.")
         parameters = []
-        if not self.match(TT.RIGHT_PAREN, TT.COLON):
+        if not (self.check(TT.RIGHT_PAREN) or self.check(TT.COLON)):
             parameters.append(self.consume(TT.IDENTIFIER,
                                            "Expect parameter name."))
             while self.match(TT.COMMA):
@@ -275,6 +281,8 @@ class Parser:
         if self.match(TT.ASSIGNMENT):
             equals = self.previous()
             value = self.assignment()
+            if self.match(TT.COMMA):
+                value = List([value, *self.inner_list().expression])
 
             if isinstance(expr, Variable):
                 name = expr.name
@@ -324,17 +332,52 @@ class Parser:
         return expr
 
     def addition(self):
-        expr = self.multiplication()
+        expr = self.list_construction()
         while self.match(TT.MINUS, TT.PLUS):
             operator = self.previous()
-            right = self.multiplication()
+            right = self.list_construction()
             expr = Binary(expr, operator, right)
 
         return expr
 
+    def inner_list(self):
+        expr = [self.expression()]
+        # Case for 1,1..10
+        if self.match(TT.ELLIPSIS):
+            token = self.previous()
+            stop = self.expression()
+            return ListConstructor(expr[0], None, stop, token)
+
+        while self.match(TT.COMMA):
+            expr.append(self.expression())
+            if len(expr) == 2:
+                if self.match(TT.ELLIPSIS):
+                    token = self.previous()
+                    stop = self.multiplication()
+                    return ListConstructor(expr[0], expr[1],
+                                           stop, token)
+        return List(expr)
+
+    def list_construction(self):
+        if self.match(TT.LEFT_BRACKET):
+            list = self.inner_list()
+            self.consume(TT.RIGHT_BRACKET, "Expect ']' to close list.")
+            return list
+        expr = self.multiplication()
+        return expr
+
     def multiplication(self):
-        expr = self.unary()
+        expr = self.exponentiation()
         while self.match(TT.SLASH, TT.STAR):
+            operator = self.previous()
+            right = self.exponentiation()
+            expr = Binary(expr, operator, right)
+
+        return expr
+
+    def exponentiation(self):
+        expr = self.unary()
+        while self.match(TT.HAT):
             operator = self.previous()
             right = self.unary()
             expr = Binary(expr, operator, right)
@@ -342,9 +385,12 @@ class Parser:
         return expr
 
     def unary(self):
-        if self.match(TT.BANG, TT.MINUS):
+        if self.match(TT.BANG, TT.MINUS, TT.PLUSPLUS, TT.MINUSMINUS):
             operator = self.previous()
             right = self.unary()
+            if operator.type in (TT.PLUSPLUS, TT.MINUSMINUS):
+                if not isinstance(right, Variable):
+                    self.error(operator, "Invalid assignment target.")
             return Unary(operator, right)
 
         return self.call()
@@ -395,6 +441,11 @@ class Parser:
         return Index(collection, paren, indicies)
 
     def primary(self):
+        if self.match(TT.LEFT_PAREN):
+            expr = self.expression()
+            self.consume(TT.RIGHT_PAREN, "Expect ')' after expression.")
+            return Grouping(expr)
+
         if self.match(TT.FALSE):
             return Literal(False)
         if self.match(TT.TRUE):
@@ -407,18 +458,6 @@ class Parser:
 
         if self.match(TT.IDENTIFIER):
             return Variable(self.previous())
-
-        if self.match(TT.LEFT_PAREN):
-            expr = self.expression()
-            self.consume(TT.RIGHT_PAREN, "Expect ')' after expression.")
-            return Grouping(expr)
-
-        if self.match(TT.LEFT_BRACKET):
-            expr = [self.expression()]
-            while self.match(TT.COMMA):
-                expr.append(self.expression())
-            self.consume(TT.RIGHT_BRACKET, "Expect ']' after expression.")
-            return List(expr)
 
         if self.match(TT.LAMBDA):
             return self.lambda_declaration()

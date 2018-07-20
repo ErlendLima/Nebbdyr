@@ -164,11 +164,51 @@ class Interpreter:
 
         if expr.operator.type == TT.MINUS:
             self.check_number_operand(expr.operator, right)
-            return -float(right)
-        elif expr.operator.type == TT.NOT:
+            return -right
+        elif expr.operator.type == TT.BANG:
             return not self.is_truthy(right)
 
+        # Increment and decrement operators
+        elif expr.operator.type == TT.PLUSPLUS:
+            self.check_number_operand(expr.operator, right)
+            distance = self.locals.get(expr)
+            if distance is not None:
+                self.environment.assign_at(distance, expr.right.name, right+1)
+            else:
+                self.globals.assign(expr.right.name, right+1)
+            return right + 1
+        elif expr.operator.type == TT.MINUSMINUS:
+            self.check_number_operand(expr.operator, right)
+            distance = self.locals.get(expr)
+            if distance is not None:
+                self.environment.assign_at(distance, expr.right.name, right-1)
+            else:
+                self.globals.assign(expr.right.name, right-1)
+            return right - 1
+
         # Unreachable
+
+    def visit_listconstructor_expr(self, expr):
+        start = self.evaluate(expr.start)
+        if not isinstance(start, (int, float)):
+            raise RuntimeException(expr.token, "Start must be iterable.")
+
+        next_is_none = False
+        if expr.next is not None:
+            next = self.evaluate(expr.next)
+            if not isinstance(next, (int, float)):
+                raise RuntimeException(expr.token, "Next must be iterable.")
+        else:
+            next_is_none = True
+
+        stop = self.evaluate(expr.stop)
+        if not isinstance(stop, (int, float)):
+            raise RuntimeException(expr.token, "Stop must be iterable.")
+
+        if next_is_none:
+            return list(range(start, stop+1))
+        else:
+            return list(range(start, stop+1, next-start))
 
     def visit_variable_expr(self, expr):
         return self.lookup_variable(expr.name, expr)
@@ -184,7 +224,8 @@ class Interpreter:
         return [self.evaluate(e) for e in expr.expression]
 
     def check_number_operand(self, operator, operand):
-        if not isinstance(operand, float):
+        # Can't use isinstance since bools are of instance int
+        if not type(operand) in (int, float):
             raise RuntimeException(operator, "Operand must be a number.")
 
     def visit_binary_expr(self, expr):
@@ -193,38 +234,53 @@ class Interpreter:
 
         if expr.operator.type == TT.MINUS:
             self.check_number_operands(expr.operator, left, right)
-            return float(left) - float(right)
+            return left - right
         elif expr.operator.type == TT.SLASH:
             self.check_number_operands(expr.operator, left, right)
-            if float(right) == 0:
+            if right == 0:
                 raise RuntimeException(expr.operator,
                                        "Attempted to divide by zero.")
-            return float(left)/float(right)
+            return left/right
         elif expr.operator.type == TT.STAR:
             self.check_number_operands(expr.operator, left, right)
-            return float(left)*float(right)
+            return left*right
         elif expr.operator.type == TT.PLUS:
             # Allow both float+float and str+str
             if type(left) == type(right):
                 return left + right
+            # Case of int + float
+            if (isinstance(left, (int, float)) and
+               isinstance(right, (int, float))):
+                return left + right
             raise RuntimeException(expr.operator,
                                    "Operands must both be numbers or strings.")
         elif expr.operator.type == TT.GREATER:
+            if left is False or right is False:
+                return False
             self.check_number_operands(expr.operator, left, right)
-            return float(left) > float(right)
+            return right if left > right else False
         elif expr.operator.type == TT.GREATER_EQUAL:
+            if left is False or right is False:
+                return False
             self.check_number_operands(expr.operator, left, right)
-            return float(left) >= float(right)
+            return right if left >= right else False
         elif expr.operator.type == TT.LESS:
+            if left is False or right is False:
+                return False
             self.check_number_operands(expr.operator, left, right)
-            return float(left) < float(right)
+            return right if left < right else False
         elif expr.operator.type == TT.LESS_EQUAL:
+            if left is False or right is False:
+                return False
             self.check_number_operands(expr.operator, left, right)
-            return float(left) <= float(right)
+            return right if left <= right else False
         elif expr.operator.type == TT.BANG_EQUAL:
-            return not self.is_equal(left, right)
+            return right if not self.is_equal(left, right) else False
         elif expr.operator.type == TT.EQUAL:
-            return self.is_equal(left, right)
+            return right if self.is_equal(left, right) else False
+        elif expr.operator.type == TT.HAT:
+            self.check_number_operands(expr.operator, left, right)
+            return left**right
 
         # Unreachable
 
@@ -286,18 +342,18 @@ class Interpreter:
         raise RuntimeException(expr.name, "Only instances have properties")
 
     def check_number_operands(self, operator, left, right):
-        if not isinstance(left, float):
+        if not isinstance(left, (float, int)):
             raise RuntimeException(
                 operator, "Left operand '{}' must be number.".format(
                     self.stringify(left)))
-        if not isinstance(right, float):
+        if not isinstance(right, (float, int)):
             raise RuntimeException(
                 operator, "Right operand '{}' must be number.".format(
                     self.stringify(right)))
 
     def is_truthy(self, object):
         # Inherit Python's definitions of True and False
-        return True if object else False
+        return True if object or (object is 0) else False
 
     def is_equal(self, left, right):
         # none is not equal to anything

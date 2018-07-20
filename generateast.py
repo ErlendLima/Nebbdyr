@@ -50,6 +50,7 @@ if __name__ == '__main__':
                                          "Logical : left, operator, right",
                                          "Set : object, name, value",
                                          "Unary : operator, right",
+                                         "ListConstructor : start, next, stop, token",
                                          "Variable : name"])
     define_ast(args.output_dir, "stmt", ["Block : statements",
                                          "Class : name, methods",

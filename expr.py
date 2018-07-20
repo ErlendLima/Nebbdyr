@@ -111,6 +111,17 @@ class Unary(Expr):
         return visitor.visit_unary_expr(self)
 
 
+class ListConstructor(Expr):
+    def __init__(self, start, next, stop, token):
+        self.start = start
+        self.next = next
+        self.stop = stop
+        self.token = token
+
+    def accept(self, visitor):
+        return visitor.visit_listconstructor_expr(self)
+
+
 class Variable(Expr):
     def __init__(self, name):
         self.name = name

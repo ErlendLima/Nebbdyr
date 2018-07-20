@@ -26,6 +26,7 @@ class TokenType(Enum):
     INDENT = 44
     DEDENT = 45
     LAMBDA = 49
+    HAT = 56
 
     # One or two character tokens
     BANG = 12
@@ -37,6 +38,8 @@ class TokenType(Enum):
     LESS = 18
     LESS_EQUAL = 19
     ELLIPSIS = 48
+    PLUSPLUS = 54
+    MINUSMINUS = 55
 
     # Literals
     IDENTIFIER = 20

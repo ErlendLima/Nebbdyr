@@ -99,13 +99,21 @@ class Scanner:
             else:
                 self.add_token(TT.DOT)
         elif char == '-':
-            self.add_token(TT.MINUS)
+            if self.match('-'):
+                self.add_token(TT.MINUSMINUS)
+            else:
+                self.add_token(TT.MINUS)
         elif char == '+':
-            self.add_token(TT.PLUS)
+            if self.match('+'):
+                self.add_token(TT.PLUSPLUS)
+            else:
+                self.add_token(TT.PLUS)
         elif char == ';':
             self.add_token(TT.SEMICOLON)
         elif char == '*':
             self.add_token(TT.STAR)
+        elif char == '^':
+            self.add_token(TT.HAT)
         elif char == '=':
             self.add_token(TT.EQUAL)
         elif char == '[':
@@ -159,8 +167,8 @@ class Scanner:
             pass
         elif char == '\n':
             self.line += 1
-            if (self.tokens[-1].type != TT.NEWLINE
-                and self.tokens[-1].type != TT.DEDENT):
+            if (len(self.tokens) > 0 and (self.tokens[-1].type != TT.NEWLINE
+               and self.tokens[-1].type != TT.DEDENT)):
                 self.add_token(TT.NEWLINE)
         # Literals
         elif char == '"':
@@ -197,7 +205,7 @@ class Scanner:
                 self.advance()
             self.add_token(TT.FLOAT, float(self.source[self.start:self.current]))
         else:
-            self.add_token(TT.INT, float(self.source[self.start:self.current]))
+            self.add_token(TT.INT, int(self.source[self.start:self.current]))
 
     def pycall(self):
         while self.peek() != '@' and not self.is_at_end():
